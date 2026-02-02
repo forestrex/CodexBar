@@ -79,7 +79,7 @@ struct ProviderSettingsToggleRowView: View {
                 }
             }
         }
-        .onChange(of: self.toggle.binding.wrappedValue) { _, enabled in
+        .codexOnChange(of: self.toggle.binding.wrappedValue) { enabled in
             guard let onChange = self.toggle.onChange else { return }
             Task { @MainActor in
                 await onChange(enabled)
@@ -133,7 +133,7 @@ struct ProviderSettingsPickerRowView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .onChange(of: self.picker.binding.wrappedValue) { _, selection in
+        .codexOnChange(of: self.picker.binding.wrappedValue) { selection in
             guard let onChange = self.picker.onChange else { return }
             Task { @MainActor in
                 await onChange(selection)

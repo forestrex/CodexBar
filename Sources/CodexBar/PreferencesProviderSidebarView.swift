@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 @MainActor
 struct ProviderSidebarListView: View {
     let providers: [UsageProvider]
-    @Bindable var store: UsageStore
+    @ObservedObject var store: UsageStore
     let isEnabled: (UsageProvider) -> Binding<Bool>
     let subtitle: (UsageProvider) -> String
     @Binding var selection: UsageProvider?
@@ -31,11 +31,11 @@ struct ProviderSidebarListView: View {
                             moveProviders: self.moveProviders))
             }
         }
-        .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)
+        .codexSidebarListStyle()
+        .codexScrollContentBackgroundHidden()
         .background(
             RoundedRectangle(cornerRadius: ProviderSettingsMetrics.sidebarCornerRadius, style: .continuous)
-                .fill(.regularMaterial))
+                .fill(Color(nsColor: .windowBackgroundColor)))
         .overlay(
             RoundedRectangle(cornerRadius: ProviderSettingsMetrics.sidebarCornerRadius, style: .continuous)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.7), lineWidth: 1))
@@ -47,7 +47,7 @@ struct ProviderSidebarListView: View {
 @MainActor
 private struct ProviderSidebarRowView: View {
     let provider: UsageProvider
-    @Bindable var store: UsageStore
+    @ObservedObject var store: UsageStore
     @Binding var isEnabled: Bool
     let subtitle: String
     @Binding var draggingProvider: UsageProvider?
@@ -81,8 +81,10 @@ private struct ProviderSidebarRowView: View {
                     }
 
                     if isRefreshing {
-                        ProgressView()
-                            .controlSize(.mini)
+                        if #available(macOS 11.0, *) {
+                            ProgressView()
+                                .controlSize(.mini)
+                        }
                     }
                 }
                 Text(statusText)
@@ -96,7 +98,7 @@ private struct ProviderSidebarRowView: View {
 
             Toggle("", isOn: self.$isEnabled)
                 .labelsHidden()
-                .toggleStyle(.checkbox)
+                .codexCheckboxStyle()
                 .controlSize(.small)
         }
         .contentShape(Rectangle())

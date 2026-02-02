@@ -1,87 +1,41 @@
 import AppKit
+import Combine
 import CodexBarCore
 import KeyboardShortcuts
-import Observation
 import QuartzCore
 import Security
 import SwiftUI
 
-@main
+@available(macOS 11.0, *)
 struct CodexBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @State private var settings: SettingsStore
-    @State private var store: UsageStore
+    @StateObject private var settings: SettingsStore
+    @StateObject private var store: UsageStore
     private let preferencesSelection: PreferencesSelection
     private let account: AccountInfo
 
     init() {
-        let env = ProcessInfo.processInfo.environment
-        let storedLevel = CodexBarLog.parseLevel(UserDefaults.standard.string(forKey: "debugLogLevel")) ?? .verbose
-        let level = CodexBarLog.parseLevel(env["CODEXBAR_LOG_LEVEL"]) ?? storedLevel
-        CodexBarLog.bootstrapIfNeeded(.init(
-            destination: .oslog(subsystem: "com.steipete.codexbar"),
-            level: level,
-            json: false))
-
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
-        let gitCommit = Bundle.main.object(forInfoDictionaryKey: "CodexGitCommit") as? String ?? "unknown"
-        let buildTimestamp = Bundle.main.object(forInfoDictionaryKey: "CodexBuildTimestamp") as? String ?? "unknown"
-        CodexBarLog.logger(LogCategories.app).info(
-            "CodexBar starting",
-            metadata: [
-                "version": version,
-                "build": build,
-                "git": gitCommit,
-                "built": buildTimestamp,
-            ])
-
-        KeychainAccessGate.isDisabled = UserDefaults.standard.bool(forKey: "debugDisableKeychainAccess")
-        KeychainPromptCoordinator.install()
-
-        let preferencesSelection = PreferencesSelection()
-        let settings = SettingsStore()
-        let fetcher = UsageFetcher()
-        let browserDetection = BrowserDetection(cacheTTL: BrowserDetection.defaultCacheTTL)
-        let account = fetcher.loadAccountInfo()
-        let store = UsageStore(fetcher: fetcher, browserDetection: browserDetection, settings: settings)
-        self.preferencesSelection = preferencesSelection
-        _settings = State(wrappedValue: settings)
-        _store = State(wrappedValue: store)
-        self.account = account
-        CodexBarLog.setLogLevel(settings.debugLogLevel)
+        let environment = AppBootstrapper.makeEnvironment()
+        self.preferencesSelection = environment.selection
+        _settings = StateObject(wrappedValue: environment.settings)
+        _store = StateObject(wrappedValue: environment.store)
+        self.account = environment.account
         self.appDelegate.configure(
-            store: store,
-            settings: settings,
-            account: account,
-            selection: preferencesSelection)
+            store: environment.store,
+            settings: environment.settings,
+            account: environment.account,
+            selection: environment.selection)
     }
 
     @SceneBuilder
     var body: some Scene {
-        // Hidden 1×1 window to keep SwiftUI's lifecycle alive so `Settings` scene
-        // shows the native toolbar tabs even though the UI is AppKit-based.
+        // Hidden 1×1 window to keep SwiftUI's lifecycle alive for background tasks
+        // while the rest of the UI is AppKit-hosted.
         WindowGroup("CodexBarLifecycleKeepalive") {
             HiddenWindowView()
         }
         .defaultSize(width: 20, height: 20)
         .windowStyle(.hiddenTitleBar)
-
-        Settings {
-            PreferencesView(
-                settings: self.settings,
-                store: self.store,
-                updater: self.appDelegate.updaterController,
-                selection: self.preferencesSelection)
-        }
-        .defaultSize(width: PreferencesTab.general.preferredWidth, height: PreferencesTab.general.preferredHeight)
-        .windowResizability(.contentSize)
-    }
-
-    private func openSettings(tab: PreferencesTab) {
-        self.preferencesSelection.tab = tab
-        NSApp.activate(ignoringOtherApps: true)
-        _ = NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
     }
 }
 
@@ -113,10 +67,9 @@ final class DisabledUpdaterController: UpdaterProviding {
 }
 
 @MainActor
-@Observable
-final class UpdateStatus {
+final class UpdateStatus: ObservableObject {
     static let disabled = UpdateStatus()
-    var isUpdateReady: Bool
+    @Published var isUpdateReady: Bool
 
     init(isUpdateReady: Bool = false) {
         self.isUpdateReady = isUpdateReady
@@ -255,6 +208,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settings: SettingsStore?
     private var account: AccountInfo?
     private var preferencesSelection: PreferencesSelection?
+    private var preferencesWindowController: PreferencesWindowController?
+    private var openSettingsObserver: NSObjectProtocol?
 
     func configure(store: UsageStore, settings: SettingsStore, account: AccountInfo, selection: PreferencesSelection) {
         self.store = store
@@ -270,6 +225,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppNotifications.shared.requestAuthorizationOnStartup()
         self.ensureStatusController()
+        self.openSettingsObserver = NotificationCenter.default.addObserver(
+            forName: .codexbarOpenSettings,
+            object: nil,
+            queue: .main,
+            using: { [weak self] notification in
+                self?.openPreferences(from: notification)
+            })
         KeyboardShortcuts.onKeyUp(for: .openMenu) { [weak self] in
             Task { @MainActor [weak self] in
                 self?.statusController?.openMenuFromShortcut()
@@ -330,5 +292,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fallbackAccount,
             self.updaterController,
             PreferencesSelection())
+    }
+
+    private func ensurePreferencesWindowController() -> PreferencesWindowController? {
+        if let controller = self.preferencesWindowController { return controller }
+        guard let store, let settings, let selection = self.preferencesSelection else { return nil }
+        let controller = PreferencesWindowController(
+            settings: settings,
+            store: store,
+            updater: self.updaterController,
+            selection: selection)
+        self.preferencesWindowController = controller
+        return controller
+    }
+
+    private func openPreferences(from notification: Notification) {
+        let tabRaw = notification.userInfo?["tab"] as? String
+        let tab = tabRaw.flatMap(PreferencesTab.init(rawValue:)) ?? .general
+        self.showPreferences(tab: tab)
+    }
+
+    private func showPreferences(tab: PreferencesTab) {
+        guard let controller = self.ensurePreferencesWindowController() else { return }
+        controller.show(tab: tab)
+    }
+
+    deinit {
+        if let observer = self.openSettingsObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 }

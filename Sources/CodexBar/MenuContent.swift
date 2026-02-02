@@ -4,8 +4,8 @@ import SwiftUI
 
 @MainActor
 struct MenuContent: View {
-    @Bindable var store: UsageStore
-    @Bindable var settings: SettingsStore
+    @ObservedObject var store: UsageStore
+    @ObservedObject var settings: SettingsStore
     let account: AccountInfo
     let updater: UpdaterProviding
     let provider: UsageProvider?
@@ -46,7 +46,7 @@ struct MenuContent: View {
             case .primary:
                 Text(text)
             case .secondary:
-                Text(text).foregroundStyle(.secondary).font(.footnote)
+                Text(text).foregroundColor(.secondary).font(.footnote)
             }
         case let .action(title, action):
             Button {
@@ -59,7 +59,7 @@ struct MenuContent: View {
                             .frame(width: 18, alignment: .center)
                         Text(title)
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundColor(.primary)
                 } else {
                     Text(title)
                 }
@@ -120,7 +120,7 @@ struct MenuActions {
 
 @MainActor
 struct StatusIconView: View {
-    @Bindable var store: UsageStore
+    @ObservedObject var store: UsageStore
     let provider: UsageProvider
 
     var body: some View {

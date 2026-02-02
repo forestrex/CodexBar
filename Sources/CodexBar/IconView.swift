@@ -8,18 +8,38 @@ struct IconView: View {
     let isStale: Bool
     let showLoadingAnimation: Bool
     let style: IconStyle
-    @State private var phase: CGFloat = 0
-    @State private var displayLink = DisplayLinkDriver()
-    @State private var pattern: LoadingPattern = .knightRider
-    @State private var debugCycle = false
-    @State private var cycleIndex = 0
-    @State private var cycleCounter = 0
+    @State private var phase: CGFloat
+    @ObservedObject private var displayLink: DisplayLinkDriver
+    @State private var pattern: LoadingPattern
+    @State private var debugCycle: Bool
+    @State private var cycleIndex: Int
+    @State private var cycleCounter: Int
     private let loadingFPS: Double = 12
     // Advance to next pattern every N ticks when debug cycling.
     private let cycleIntervalTicks = 20
     private let patterns = LoadingPattern.allCases
 
     private var isLoading: Bool { self.showLoadingAnimation && self.snapshot == nil }
+
+    init(
+        snapshot: UsageSnapshot?,
+        creditsRemaining: Double?,
+        isStale: Bool,
+        showLoadingAnimation: Bool,
+        style: IconStyle)
+    {
+        self.snapshot = snapshot
+        self.creditsRemaining = creditsRemaining
+        self.isStale = isStale
+        self.showLoadingAnimation = showLoadingAnimation
+        self.style = style
+        self._phase = State(initialValue: 0)
+        self._displayLink = ObservedObject(wrappedValue: DisplayLinkDriver())
+        self._pattern = State(initialValue: .knightRider)
+        self._debugCycle = State(initialValue: false)
+        self._cycleIndex = State(initialValue: 0)
+        self._cycleCounter = State(initialValue: 0)
+    }
 
     var body: some View {
         Group {
@@ -41,7 +61,7 @@ struct IconView: View {
                     .interpolation(.none)
                     .frame(width: 20, height: 18, alignment: .center)
                     .padding(.horizontal, 2)
-                    .onChange(of: self.displayLink.tick) { _, _ in
+                    .codexOnChange(of: self.displayLink.tick) { _ in
                         self.phase += 0.09 // half-speed animation
                         if self.debugCycle {
                             self.cycleCounter += 1
@@ -66,7 +86,7 @@ struct IconView: View {
                     .padding(.horizontal, 2)
             }
         }
-        .onChange(of: self.isLoading, initial: true) { _, isLoading in
+        .codexOnChange(of: self.isLoading, initial: true) { isLoading in
             if isLoading {
                 self.displayLink.start(fps: self.loadingFPS)
                 if !self.debugCycle {

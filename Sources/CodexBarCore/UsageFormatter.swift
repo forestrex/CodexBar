@@ -37,14 +37,23 @@ public enum UsageFormatter {
         // Human-friendly phrasing: today / tomorrow / date+time.
         let calendar = Calendar.current
         if calendar.isDate(date, inSameDayAs: now) {
-            return date.formatted(date: .omitted, time: .shortened)
+            if #available(macOS 12.0, *) {
+                return date.formatted(date: .omitted, time: .shortened)
+            }
+            return self.shortTimeString(from: date)
         }
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
            calendar.isDate(date, inSameDayAs: tomorrow)
         {
-            return "tomorrow, \(date.formatted(date: .omitted, time: .shortened))"
+            if #available(macOS 12.0, *) {
+                return "tomorrow, \(date.formatted(date: .omitted, time: .shortened))"
+            }
+            return "tomorrow, \(self.shortTimeString(from: date))"
         }
-        return date.formatted(date: .abbreviated, time: .shortened)
+        if #available(macOS 12.0, *) {
+            return date.formatted(date: .abbreviated, time: .shortened)
+        }
+        return self.abbreviatedDateTimeString(from: date)
     }
 
     public static func resetLine(
@@ -88,7 +97,10 @@ public enum UsageFormatter {
             return "Updated \(wholeHours)h ago"
             #endif
         } else {
-            return "Updated \(date.formatted(date: .omitted, time: .shortened))"
+            if #available(macOS 12.0, *) {
+                return "Updated \(date.formatted(date: .omitted, time: .shortened))"
+            }
+            return "Updated \(self.shortTimeString(from: date))"
         }
     }
 
@@ -105,15 +117,51 @@ public enum UsageFormatter {
     /// Formats a USD value with proper negative handling and thousand separators.
     /// Uses Swift's modern FormatStyle API (iOS 15+/macOS 12+) for robust, locale-aware formatting.
     public static func usdString(_ value: Double) -> String {
-        value.formatted(.currency(code: "USD").locale(Locale(identifier: "en_US")))
+        if #available(macOS 12.0, *) {
+            return value.formatted(.currency(code: "USD").locale(Locale(identifier: "en_US")))
+        }
+        return self.currencyStringFallback(value, currencyCode: "USD")
     }
 
     /// Formats a currency value with the specified currency code.
     /// Uses FormatStyle with explicit en_US locale to ensure consistent formatting
     /// regardless of the user's system locale (e.g., pt-BR users see $54.72 not US$ 54,72).
     public static func currencyString(_ value: Double, currencyCode: String) -> String {
-        value.formatted(.currency(code: currencyCode).locale(Locale(identifier: "en_US")))
+        if #available(macOS 12.0, *) {
+            return value.formatted(.currency(code: currencyCode).locale(Locale(identifier: "en_US")))
+        }
+        return self.currencyStringFallback(value, currencyCode: currencyCode)
     }
+
+    private static func shortTimeString(from date: Date) -> String {
+        self.sharedShortTimeFormatter.string(from: date)
+    }
+
+    private static func abbreviatedDateTimeString(from date: Date) -> String {
+        self.sharedAbbreviatedDateFormatter.string(from: date)
+    }
+
+    private static func currencyStringFallback(_ value: Double, currencyCode: String) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
+        formatter.locale = Locale(identifier: "en_US")
+        return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
+    }
+
+    private static let sharedShortTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
+    private static let sharedAbbreviatedDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 
     public static func tokenCountString(_ value: Int) -> String {
         let absValue = abs(value)

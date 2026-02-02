@@ -5,9 +5,9 @@ import SwiftUI
 struct AboutPane: View {
     let updater: UpdaterProviding
     @State private var iconHover = false
-    @AppStorage("autoUpdateEnabled") private var autoUpdateEnabled: Bool = true
-    @AppStorage(UpdateChannel.userDefaultsKey)
-    private var updateChannelRaw: String = UpdateChannel.defaultChannel.rawValue
+    @CodexAppStorage("autoUpdateEnabled", defaultValue: true) private var autoUpdateEnabled: Bool
+    @CodexAppStorage(UpdateChannel.userDefaultsKey, defaultValue: UpdateChannel.defaultChannel.rawValue)
+    private var updateChannelRaw: String
     @State private var didLoadUpdaterState = false
 
     private var versionString: String {
@@ -81,7 +81,7 @@ struct AboutPane: View {
             if self.updater.isAvailable {
                 VStack(spacing: 10) {
                     Toggle("Check for updates automatically", isOn: self.$autoUpdateEnabled)
-                        .toggleStyle(.checkbox)
+                        .codexCheckboxStyle()
                         .frame(maxWidth: .infinity, alignment: .center)
                     VStack(spacing: 6) {
                         HStack(spacing: 12) {
@@ -127,7 +127,7 @@ struct AboutPane: View {
             self.updater.automaticallyDownloadsUpdates = self.autoUpdateEnabled
             self.didLoadUpdaterState = true
         }
-        .onChange(of: self.autoUpdateEnabled) { _, newValue in
+        .codexOnChange(of: self.autoUpdateEnabled) { newValue in
             self.updater.automaticallyChecksForUpdates = newValue
             self.updater.automaticallyDownloadsUpdates = newValue
         }

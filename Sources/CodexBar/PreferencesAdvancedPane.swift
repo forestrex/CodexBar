@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 struct AdvancedPane: View {
-    @Bindable var settings: SettingsStore
+    @ObservedObject var settings: SettingsStore
     @State private var isInstallingCLI = false
     @State private var cliStatus: String?
 
@@ -34,7 +34,9 @@ struct AdvancedPane: View {
                             Task { await self.installCLI() }
                         } label: {
                             if self.isInstallingCLI {
+                            if #available(macOS 11.0, *) {
                                 ProgressView().controlSize(.small)
+                            }
                             } else {
                                 Text("Install CLI")
                             }

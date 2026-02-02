@@ -4,9 +4,9 @@ import SwiftUI
 
 @MainActor
 struct DebugPane: View {
-    @Bindable var settings: SettingsStore
-    @Bindable var store: UsageStore
-    @AppStorage("debugFileLoggingEnabled") private var debugFileLoggingEnabled = false
+    @ObservedObject var settings: SettingsStore
+    @ObservedObject var store: UsageStore
+    @CodexAppStorage("debugFileLoggingEnabled", defaultValue: false) private var debugFileLoggingEnabled
     @State private var currentLogProvider: UsageProvider = .codex
     @State private var currentFetchProvider: UsageProvider = .codex
     @State private var isLoadingLog = false
@@ -31,7 +31,7 @@ struct DebugPane: View {
                         title: "Enable file logging",
                         subtitle: "Write logs to \(self.fileLogPath) for debugging.",
                         binding: self.$debugFileLoggingEnabled)
-                        .onChange(of: self.debugFileLoggingEnabled) { _, newValue in
+                        .codexOnChange(of: self.debugFileLoggingEnabled) { newValue in
                             if self.settings.debugFileLoggingEnabled != newValue {
                                 self.settings.debugFileLoggingEnabled = newValue
                             }
@@ -146,7 +146,7 @@ struct DebugPane: View {
                         ScrollView {
                             Text(self.displayedLog)
                                 .font(.system(.footnote, design: .monospaced))
-                                .textSelection(.enabled)
+                                .codexTextSelection(true)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(8)
                         }
@@ -155,10 +155,12 @@ struct DebugPane: View {
                         .cornerRadius(6)
 
                         if self.isLoadingLog {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                                .padding()
+                            if #available(macOS 11.0, *) {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                    .padding()
+                            }
                         }
                     }
                 }
@@ -178,7 +180,7 @@ struct DebugPane: View {
                     ScrollView {
                         Text(self.fetchAttemptsText(for: self.currentFetchProvider))
                             .font(.system(.footnote, design: .monospaced))
-                            .textSelection(.enabled)
+                            .codexTextSelection(true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(8)
                     }
@@ -207,7 +209,7 @@ struct DebugPane: View {
                                     ? (self.store.openAIDashboardCookieImportDebugLog ?? "")
                                     : "No log yet. Update OpenAI cookies in Providers → Codex to run an import.")
                                 .font(.system(.footnote, design: .monospaced))
-                                .textSelection(.enabled)
+                                .codexTextSelection(true)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(8)
                         }
@@ -363,7 +365,7 @@ struct DebugPane: View {
                                     ? "Unavailable"
                                     : self.store.pathDebugInfo.effectivePATH)
                                 .font(.system(.footnote, design: .monospaced))
-                                .textSelection(.enabled)
+                                .codexTextSelection(true)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(6)
                         }
@@ -379,7 +381,7 @@ struct DebugPane: View {
                             ScrollView {
                                 Text(loginPATH)
                                     .font(.system(.footnote, design: .monospaced))
-                                    .textSelection(.enabled)
+                                    .codexTextSelection(true)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(6)
                             }

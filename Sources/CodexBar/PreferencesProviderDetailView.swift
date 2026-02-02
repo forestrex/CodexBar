@@ -4,7 +4,7 @@ import SwiftUI
 @MainActor
 struct ProviderDetailView: View {
     let provider: UsageProvider
-    @Bindable var store: UsageStore
+    @ObservedObject var store: UsageStore
     @Binding var isEnabled: Bool
     let subtitle: String
     let model: UsageMenuCardView.Model
@@ -117,7 +117,7 @@ struct ProviderDetailView: View {
 @MainActor
 private struct ProviderDetailHeaderView: View {
     let provider: UsageProvider
-    @Bindable var store: UsageStore
+    @ObservedObject var store: UsageStore
     @Binding var isEnabled: Bool
     let subtitle: String
     let model: UsageMenuCardView.Model
@@ -199,7 +199,7 @@ private struct ProviderDetailBrandIcon: View {
 @MainActor
 private struct ProviderDetailInfoGrid: View {
     let provider: UsageProvider
-    @Bindable var store: UsageStore
+    @ObservedObject var store: UsageStore
     let isEnabled: Bool
     let model: UsageMenuCardView.Model
     let labelWidth: CGFloat
