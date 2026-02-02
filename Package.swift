@@ -14,7 +14,7 @@ let sweetCookieKitDependency: Package.Dependency =
 let package = Package(
     name: "CodexBar",
     platforms: [
-        .macOS(.v14),
+        .macOS(.v10_15),
     ],
     dependencies: [
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.8.1"),

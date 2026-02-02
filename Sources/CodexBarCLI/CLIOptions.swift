@@ -9,7 +9,7 @@ struct UsageOptions: CommanderParsable {
         #if os(macOS)
         "Data source: auto | web | cli | oauth | api (auto uses web then falls back on missing cookies)"
         #else
-        "Data source: auto | web | cli | oauth | api (web/auto are macOS only)"
+        "Data source: auto | web | cli | oauth | api (Linux x86_64 web/auto require Codex cookieHeader)"
         #endif
     }()
 

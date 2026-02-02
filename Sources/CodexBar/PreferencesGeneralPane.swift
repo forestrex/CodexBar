@@ -4,8 +4,8 @@ import SwiftUI
 
 @MainActor
 struct GeneralPane: View {
-    @Bindable var settings: SettingsStore
-    @Bindable var store: UsageStore
+    @ObservedObject var settings: SettingsStore
+    @ObservedObject var store: UsageStore
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
@@ -35,7 +35,7 @@ struct GeneralPane: View {
                                 Text("Show cost summary")
                                     .font(.body)
                             }
-                            .toggleStyle(.checkbox)
+                            .codexCheckboxStyle()
 
                             Text("Reads local usage logs. Shows today + last 30 days cost in the menu.")
                                 .font(.footnote)

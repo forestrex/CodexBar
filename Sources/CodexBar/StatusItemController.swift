@@ -1,6 +1,6 @@
 import AppKit
 import CodexBarCore
-import Observation
+import Combine
 import QuartzCore
 import SwiftUI
 
@@ -87,6 +87,10 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         get { self.settings.selectedMenuProvider }
         set { self.settings.selectedMenuProvider = newValue }
     }
+    private var storeCancellable: AnyCancellable?
+    private var debugCancellable: AnyCancellable?
+    private var settingsCancellable: AnyCancellable?
+    private var updaterCancellable: AnyCancellable?
 
     struct BlinkState {
         var nextBlink: Date
@@ -182,42 +186,37 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     }
 
     private func observeStoreChanges() {
-        withObservationTracking {
-            _ = self.store.menuObservationToken
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
+        self.storeCancellable?.cancel()
+        self.storeCancellable = self.store.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
                 guard let self else { return }
-                self.observeStoreChanges()
                 self.invalidateMenus()
                 self.updateIcons()
                 self.updateBlinkingState()
             }
-        }
     }
 
     private func observeDebugForceAnimation() {
-        withObservationTracking {
-            _ = self.store.debugForceAnimation
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
+        self.debugCancellable?.cancel()
+        self.debugCancellable = self.store.$debugForceAnimation
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
                 guard let self else { return }
-                self.observeDebugForceAnimation()
                 self.updateVisibility()
                 self.updateBlinkingState()
             }
-        }
     }
 
     private func observeSettingsChanges() {
-        withObservationTracking {
-            _ = self.settings.menuObservationToken
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
+        self.settingsCancellable?.cancel()
+        self.settingsCancellable = self.settings.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
                 guard let self else { return }
-                self.observeSettingsChanges()
                 self.handleSettingsChange(reason: "observation")
             }
-        }
     }
 
     func handleProviderConfigChange(reason: String) {
@@ -239,15 +238,13 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
     }
 
     private func observeUpdaterChanges() {
-        withObservationTracking {
-            _ = self.updater.updateStatus.isUpdateReady
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
+        self.updaterCancellable?.cancel()
+        self.updaterCancellable = self.updater.updateStatus.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
                 guard let self else { return }
-                self.observeUpdaterChanges()
                 self.invalidateMenus()
             }
-        }
     }
 
     private func invalidateMenus() {

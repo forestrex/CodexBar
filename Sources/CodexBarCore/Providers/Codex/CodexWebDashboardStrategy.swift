@@ -149,20 +149,59 @@ extension CodexWebDashboardStrategy {
     }
 }
 #else
+import Foundation
+
 public struct CodexWebDashboardStrategy: ProviderFetchStrategy {
     public let id: String = "codex.web.dashboard"
     public let kind: ProviderFetchKind = .webDashboard
 
     public init() {}
 
-    public func isAvailable(_: ProviderFetchContext) async -> Bool { false }
+    public func isAvailable(_ context: ProviderFetchContext) async -> Bool {
+        guard context.sourceMode.usesWeb else { return false }
+        #if os(Linux) && arch(x86_64)
+        let cookieHeader = Self.manualCookieHeader(from: context)
+        return cookieHeader?.isEmpty == false
+        #else
+        return false
+        #endif
+    }
 
-    public func fetch(_: ProviderFetchContext) async throws -> ProviderFetchResult {
+    public func fetch(_ context: ProviderFetchContext) async throws -> ProviderFetchResult {
+        #if os(Linux) && arch(x86_64)
+        guard let cookieHeader = Self.manualCookieHeader(from: context),
+              !cookieHeader.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            throw OpenAIDashboardFetcher.FetchError.loginRequired
+        }
+
+        let accountEmail = context.fetcher.loadAccountInfo().email?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let dashboard = try await OpenAIDashboardFetcher().loadLatestDashboard(
+            cookieHeader: cookieHeader,
+            logger: nil,
+            debugDumpHTML: context.webDebugDumpHTML,
+            timeout: context.webTimeout)
+        guard let usage = dashboard.toUsageSnapshot(provider: .codex, accountEmail: accountEmail) else {
+            throw OpenAIDashboardFetcher.FetchError.noDashboardData(body: "Usage limits missing")
+        }
+        let credits = dashboard.toCreditsSnapshot()
+        return self.makeResult(
+            usage: usage,
+            credits: credits,
+            dashboard: dashboard,
+            sourceLabel: "openai-web")
+        #else
         throw ProviderFetchError.noAvailableStrategy(.codex)
+        #endif
     }
 
     public func shouldFallback(on _: Error, context _: ProviderFetchContext) -> Bool {
         false
+    }
+
+    private static func manualCookieHeader(from context: ProviderFetchContext) -> String? {
+        context.settings?.codex?.manualCookieHeader
     }
 }
 #endif

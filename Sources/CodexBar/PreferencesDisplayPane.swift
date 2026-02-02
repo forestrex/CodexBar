@@ -2,7 +2,7 @@ import SwiftUI
 
 @MainActor
 struct DisplayPane: View {
-    @Bindable var settings: SettingsStore
+    @ObservedObject var settings: SettingsStore
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {

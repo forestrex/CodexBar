@@ -22,38 +22,38 @@ enum PreferencesTab: String, Hashable {
 
 @MainActor
 struct PreferencesView: View {
-    @Bindable var settings: SettingsStore
-    @Bindable var store: UsageStore
+    @ObservedObject var settings: SettingsStore
+    @ObservedObject var store: UsageStore
     let updater: UpdaterProviding
-    @Bindable var selection: PreferencesSelection
+    @ObservedObject var selection: PreferencesSelection
     @State private var contentWidth: CGFloat = PreferencesTab.general.preferredWidth
     @State private var contentHeight: CGFloat = PreferencesTab.general.preferredHeight
 
     var body: some View {
         TabView(selection: self.$selection.tab) {
             GeneralPane(settings: self.settings, store: self.store)
-                .tabItem { Label("General", systemImage: "gearshape") }
+                .tabItem { self.tabLabel(title: "General", systemImage: "gearshape") }
                 .tag(PreferencesTab.general)
 
             ProvidersPane(settings: self.settings, store: self.store)
-                .tabItem { Label("Providers", systemImage: "square.grid.2x2") }
+                .tabItem { self.tabLabel(title: "Providers", systemImage: "square.grid.2x2") }
                 .tag(PreferencesTab.providers)
 
             DisplayPane(settings: self.settings)
-                .tabItem { Label("Display", systemImage: "eye") }
+                .tabItem { self.tabLabel(title: "Display", systemImage: "eye") }
                 .tag(PreferencesTab.display)
 
             AdvancedPane(settings: self.settings)
-                .tabItem { Label("Advanced", systemImage: "slider.horizontal.3") }
+                .tabItem { self.tabLabel(title: "Advanced", systemImage: "slider.horizontal.3") }
                 .tag(PreferencesTab.advanced)
 
             AboutPane(updater: self.updater)
-                .tabItem { Label("About", systemImage: "info.circle") }
+                .tabItem { self.tabLabel(title: "About", systemImage: "info.circle") }
                 .tag(PreferencesTab.about)
 
             if self.settings.debugMenuEnabled {
                 DebugPane(settings: self.settings, store: self.store)
-                    .tabItem { Label("Debug", systemImage: "ladybug") }
+                    .tabItem { self.tabLabel(title: "Debug", systemImage: "ladybug") }
                     .tag(PreferencesTab.debug)
             }
         }
@@ -64,10 +64,10 @@ struct PreferencesView: View {
             self.updateLayout(for: self.selection.tab, animate: false)
             self.ensureValidTabSelection()
         }
-        .onChange(of: self.selection.tab) { _, newValue in
+        .onReceive(self.selection.$tab.dropFirst()) { newValue in
             self.updateLayout(for: newValue, animate: true)
         }
-        .onChange(of: self.settings.debugMenuEnabled) { _, _ in
+        .onReceive(self.settings.$debugMenuEnabled.dropFirst()) { _ in
             self.ensureValidTabSelection()
         }
     }
@@ -88,6 +88,15 @@ struct PreferencesView: View {
         if !self.settings.debugMenuEnabled, self.selection.tab == .debug {
             self.selection.tab = .general
             self.updateLayout(for: .general, animate: true)
+        }
+    }
+
+    @ViewBuilder
+    private func tabLabel(title: String, systemImage: String) -> some View {
+        if #available(macOS 11, *) {
+            Label(title, systemImage: systemImage)
+        } else {
+            Text(title)
         }
     }
 }

@@ -36,6 +36,7 @@ private struct ConfigChangeContext {
 extension SettingsStore {
     private func updateConfig(reason: String, mutate: (inout CodexBarConfig) -> Void) {
         guard !self.configLoading else { return }
+        self.objectWillChange.send()
         var config = self.config
         mutate(&config)
         self.config = config.normalized()
@@ -115,6 +116,7 @@ extension SettingsStore {
 
     func applyExternalConfig(_ config: CodexBarConfig, reason: String) {
         guard !self.configLoading else { return }
+        self.objectWillChange.send()
         self.configLoading = true
         self.config = config
         self.updateProviderState(config: config)

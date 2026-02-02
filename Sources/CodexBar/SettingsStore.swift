@@ -1,6 +1,6 @@
 import AppKit
+import Combine
 import CodexBarCore
-import Observation
 import ServiceManagement
 
 enum RefreshFrequency: String, CaseIterable, Identifiable {
@@ -55,8 +55,7 @@ enum MenuBarMetricPreference: String, CaseIterable, Identifiable {
 }
 
 @MainActor
-@Observable
-final class SettingsStore {
+final class SettingsStore: ObservableObject {
     static let sharedDefaults = UserDefaults(suiteName: "group.com.steipete.codexbar")
     static let isRunningTests: Bool = {
         let env = ProcessInfo.processInfo.environment
@@ -66,16 +65,16 @@ final class SettingsStore {
         return NSClassFromString("XCTestCase") != nil
     }()
 
-    @ObservationIgnored let userDefaults: UserDefaults
-    @ObservationIgnored let configStore: CodexBarConfigStore
-    @ObservationIgnored var config: CodexBarConfig
-    @ObservationIgnored var configPersistTask: Task<Void, Never>?
-    @ObservationIgnored var configLoading = false
-    @ObservationIgnored var tokenAccountsLoaded = false
-    var defaultsState: SettingsDefaultsState
-    var configRevision: Int = 0
-    var providerOrder: [UsageProvider] = []
-    var providerEnablement: [UsageProvider: Bool] = [:]
+    let userDefaults: UserDefaults
+    let configStore: CodexBarConfigStore
+    var config: CodexBarConfig
+    var configPersistTask: Task<Void, Never>?
+    var configLoading = false
+    var tokenAccountsLoaded = false
+    @Published var defaultsState: SettingsDefaultsState
+    @Published var configRevision: Int = 0
+    @Published var providerOrder: [UsageProvider] = []
+    @Published var providerEnablement: [UsageProvider: Bool] = [:]
 
     init(
         userDefaults: UserDefaults = .standard,
@@ -147,6 +146,12 @@ final class SettingsStore {
         self.openAIWebAccessEnabled = self.codexCookieSource.isEnabled
         Self.sharedDefaults?.set(self.debugDisableKeychainAccess, forKey: "debugDisableKeychainAccess")
         KeychainAccessGate.isDisabled = self.debugDisableKeychainAccess
+    }
+
+    func updateDefaultsState(_ update: (inout SettingsDefaultsState) -> Void) {
+        var updated = self.defaultsState
+        update(&updated)
+        self.defaultsState = updated
     }
 }
 

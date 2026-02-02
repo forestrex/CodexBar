@@ -1,6 +1,6 @@
 import CodexBarCore
 import Foundation
-import Observation
+import Combine
 import Testing
 @testable import CodexBar
 
@@ -265,18 +265,14 @@ struct SettingsStoreTests {
             syntheticTokenStore: NoopSyntheticTokenStore())
 
         var didChange = false
-
-        withObservationTracking {
-            _ = store.menuObservationToken
-        } onChange: {
-            Task { @MainActor in
-                didChange = true
-            }
+        let cancellable = store.objectWillChange.sink { _ in
+            didChange = true
         }
 
         store.statusChecksEnabled.toggle()
         try? await Task.sleep(nanoseconds: 50_000_000)
 
+        cancellable.cancel()
         #expect(didChange == true)
     }
 
@@ -294,18 +290,14 @@ struct SettingsStoreTests {
             syntheticTokenStore: NoopSyntheticTokenStore())
 
         var didChange = false
-
-        withObservationTracking {
-            _ = store.codexCookieSource
-        } onChange: {
-            Task { @MainActor in
-                didChange = true
-            }
+        let cancellable = store.objectWillChange.sink { _ in
+            didChange = true
         }
 
         store.codexCookieSource = .manual
         try? await Task.sleep(nanoseconds: 50_000_000)
 
+        cancellable.cancel()
         #expect(didChange == true)
     }
 

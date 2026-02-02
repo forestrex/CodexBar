@@ -13,7 +13,7 @@ struct PreferenceToggleRow: View {
                 Text(self.title)
                     .font(.body)
             }
-            .toggleStyle(.checkbox)
+            .codexCheckboxStyle()
 
             if let subtitle, !subtitle.isEmpty {
                 Text(subtitle)

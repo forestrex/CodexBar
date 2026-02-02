@@ -244,12 +244,37 @@ extension CodexBarCLI {
 
         #if !os(macOS)
         if effectiveSourceMode.usesWeb {
+            #if os(Linux) && arch(x86_64)
+            if provider == .codex {
+                let manualCookieHeader = settings?.codex?.manualCookieHeader?.trimmingCharacters(
+                    in: .whitespacesAndNewlines) ?? ""
+                if manualCookieHeader.isEmpty {
+                    return Self.webSourceUnsupportedOutput(
+                        provider: provider,
+                        account: account,
+                        source: effectiveSourceMode.rawValue,
+                        status: status,
+                        command: command,
+                        message: "Error: --source web/auto requires a Codex cookieHeader on Linux.")
+                }
+            } else {
+                return Self.webSourceUnsupportedOutput(
+                    provider: provider,
+                    account: account,
+                    source: effectiveSourceMode.rawValue,
+                    status: status,
+                    command: command,
+                    message: "Error: --source web/auto is only supported on macOS.")
+            }
+            #else
             return Self.webSourceUnsupportedOutput(
                 provider: provider,
                 account: account,
                 source: effectiveSourceMode.rawValue,
                 status: status,
-                command: command)
+                command: command,
+                message: "Error: --source web/auto is only supported on macOS.")
+            #endif
         }
         #endif
 
@@ -385,13 +410,14 @@ extension CodexBarCLI {
         account: ProviderTokenAccount?,
         source: String,
         status: ProviderStatusPayload?,
-        command: UsageCommandContext) -> UsageCommandOutput
+        command: UsageCommandContext,
+        message: String) -> UsageCommandOutput
     {
         var output = UsageCommandOutput()
         let error = NSError(
             domain: "CodexBarCLI",
             code: 1,
-            userInfo: [NSLocalizedDescriptionKey: "Error: --source web/auto is only supported on macOS."])
+            userInfo: [NSLocalizedDescriptionKey: message])
         output.exitCode = .failure
         if command.format == .json {
             output.payload.append(Self.makeProviderErrorPayload(

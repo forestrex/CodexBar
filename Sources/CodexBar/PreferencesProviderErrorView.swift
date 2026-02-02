@@ -44,7 +44,7 @@ struct ProviderErrorView: View {
             if self.isExpanded {
                 Text(self.display.full)
                     .font(.footnote)
-                    .textSelection(.enabled)
+                    .codexTextSelection(true)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

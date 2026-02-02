@@ -1,6 +1,6 @@
 import AppKit
 import CodexBarCore
-import Observation
+import Combine
 import QuartzCore
 import SwiftUI
 
@@ -813,9 +813,8 @@ extension StatusItemController {
     }
 
     @MainActor
-    @Observable
-    fileprivate final class MenuCardHighlightState {
-        var isHighlighted = false
+    fileprivate final class MenuCardHighlightState: ObservableObject {
+        @Published var isHighlighted = false
     }
 
     private final class MenuHostingView<Content: View>: NSHostingView<Content> {
@@ -862,7 +861,7 @@ extension StatusItemController {
     }
 
     private struct MenuCardSectionContainerView<Content: View>: View {
-        @Bindable var highlightState: MenuCardHighlightState
+        @ObservedObject var highlightState: MenuCardHighlightState
         let showsSubmenuIndicator: Bool
         let content: Content
 
@@ -996,7 +995,7 @@ extension StatusItemController {
         let width = Self.menuCardBaseWidth
         guard !breakdown.isEmpty else { return nil }
 
-        if !Self.menuCardRenderingEnabled {
+        if !Self.menuCardRenderingEnabled || #unavailable(macOS 13) {
             let submenu = NSMenu()
             submenu.delegate = self
             let chartItem = NSMenuItem()
@@ -1028,7 +1027,7 @@ extension StatusItemController {
         let width = Self.menuCardBaseWidth
         guard !breakdown.isEmpty else { return nil }
 
-        if !Self.menuCardRenderingEnabled {
+        if !Self.menuCardRenderingEnabled || #unavailable(macOS 13) {
             let submenu = NSMenu()
             submenu.delegate = self
             let chartItem = NSMenuItem()
@@ -1061,7 +1060,7 @@ extension StatusItemController {
         guard let tokenSnapshot = self.store.tokenSnapshot(for: provider) else { return nil }
         guard !tokenSnapshot.daily.isEmpty else { return nil }
 
-        if !Self.menuCardRenderingEnabled {
+        if !Self.menuCardRenderingEnabled || #unavailable(macOS 13) {
             let submenu = NSMenu()
             submenu.delegate = self
             let chartItem = NSMenuItem()

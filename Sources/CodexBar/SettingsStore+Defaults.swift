@@ -6,7 +6,7 @@ extension SettingsStore {
     var refreshFrequency: RefreshFrequency {
         get { self.defaultsState.refreshFrequency }
         set {
-            self.defaultsState.refreshFrequency = newValue
+            self.updateDefaultsState { $0.refreshFrequency = newValue }
             self.userDefaults.set(newValue.rawValue, forKey: "refreshFrequency")
         }
     }
@@ -14,7 +14,7 @@ extension SettingsStore {
     var launchAtLogin: Bool {
         get { self.defaultsState.launchAtLogin }
         set {
-            self.defaultsState.launchAtLogin = newValue
+            self.updateDefaultsState { $0.launchAtLogin = newValue }
             self.userDefaults.set(newValue, forKey: "launchAtLogin")
             LaunchAtLoginManager.setEnabled(newValue)
         }
@@ -23,7 +23,7 @@ extension SettingsStore {
     var debugMenuEnabled: Bool {
         get { self.defaultsState.debugMenuEnabled }
         set {
-            self.defaultsState.debugMenuEnabled = newValue
+            self.updateDefaultsState { $0.debugMenuEnabled = newValue }
             self.userDefaults.set(newValue, forKey: "debugMenuEnabled")
         }
     }
@@ -31,7 +31,7 @@ extension SettingsStore {
     var debugDisableKeychainAccess: Bool {
         get { self.defaultsState.debugDisableKeychainAccess }
         set {
-            self.defaultsState.debugDisableKeychainAccess = newValue
+            self.updateDefaultsState { $0.debugDisableKeychainAccess = newValue }
             self.userDefaults.set(newValue, forKey: "debugDisableKeychainAccess")
             Self.sharedDefaults?.set(newValue, forKey: "debugDisableKeychainAccess")
             KeychainAccessGate.isDisabled = newValue
@@ -41,7 +41,7 @@ extension SettingsStore {
     var debugFileLoggingEnabled: Bool {
         get { self.defaultsState.debugFileLoggingEnabled }
         set {
-            self.defaultsState.debugFileLoggingEnabled = newValue
+            self.updateDefaultsState { $0.debugFileLoggingEnabled = newValue }
             self.userDefaults.set(newValue, forKey: "debugFileLoggingEnabled")
             CodexBarLog.setFileLoggingEnabled(newValue)
         }
@@ -53,7 +53,7 @@ extension SettingsStore {
             return CodexBarLog.parseLevel(raw) ?? .verbose
         }
         set {
-            self.defaultsState.debugLogLevelRaw = newValue.rawValue
+            self.updateDefaultsState { $0.debugLogLevelRaw = newValue.rawValue }
             self.userDefaults.set(newValue.rawValue, forKey: "debugLogLevel")
             CodexBarLog.setLogLevel(newValue)
         }
@@ -62,7 +62,7 @@ extension SettingsStore {
     var debugKeepCLISessionsAlive: Bool {
         get { self.defaultsState.debugKeepCLISessionsAlive }
         set {
-            self.defaultsState.debugKeepCLISessionsAlive = newValue
+            self.updateDefaultsState { $0.debugKeepCLISessionsAlive = newValue }
             self.userDefaults.set(newValue, forKey: "debugKeepCLISessionsAlive")
         }
     }
@@ -74,7 +74,7 @@ extension SettingsStore {
     private var debugLoadingPatternRaw: String? {
         get { self.defaultsState.debugLoadingPatternRaw }
         set {
-            self.defaultsState.debugLoadingPatternRaw = newValue
+            self.updateDefaultsState { $0.debugLoadingPatternRaw = newValue }
             if let raw = newValue {
                 self.userDefaults.set(raw, forKey: "debugLoadingPattern")
             } else {
@@ -86,7 +86,7 @@ extension SettingsStore {
     var statusChecksEnabled: Bool {
         get { self.defaultsState.statusChecksEnabled }
         set {
-            self.defaultsState.statusChecksEnabled = newValue
+            self.updateDefaultsState { $0.statusChecksEnabled = newValue }
             self.userDefaults.set(newValue, forKey: "statusChecksEnabled")
         }
     }
@@ -94,7 +94,7 @@ extension SettingsStore {
     var sessionQuotaNotificationsEnabled: Bool {
         get { self.defaultsState.sessionQuotaNotificationsEnabled }
         set {
-            self.defaultsState.sessionQuotaNotificationsEnabled = newValue
+            self.updateDefaultsState { $0.sessionQuotaNotificationsEnabled = newValue }
             self.userDefaults.set(newValue, forKey: "sessionQuotaNotificationsEnabled")
         }
     }
@@ -102,7 +102,7 @@ extension SettingsStore {
     var usageBarsShowUsed: Bool {
         get { self.defaultsState.usageBarsShowUsed }
         set {
-            self.defaultsState.usageBarsShowUsed = newValue
+            self.updateDefaultsState { $0.usageBarsShowUsed = newValue }
             self.userDefaults.set(newValue, forKey: "usageBarsShowUsed")
         }
     }
@@ -110,7 +110,7 @@ extension SettingsStore {
     var resetTimesShowAbsolute: Bool {
         get { self.defaultsState.resetTimesShowAbsolute }
         set {
-            self.defaultsState.resetTimesShowAbsolute = newValue
+            self.updateDefaultsState { $0.resetTimesShowAbsolute = newValue }
             self.userDefaults.set(newValue, forKey: "resetTimesShowAbsolute")
         }
     }
@@ -118,7 +118,7 @@ extension SettingsStore {
     var menuBarShowsBrandIconWithPercent: Bool {
         get { self.defaultsState.menuBarShowsBrandIconWithPercent }
         set {
-            self.defaultsState.menuBarShowsBrandIconWithPercent = newValue
+            self.updateDefaultsState { $0.menuBarShowsBrandIconWithPercent = newValue }
             self.userDefaults.set(newValue, forKey: "menuBarShowsBrandIconWithPercent")
         }
     }
@@ -126,7 +126,7 @@ extension SettingsStore {
     private var menuBarDisplayModeRaw: String? {
         get { self.defaultsState.menuBarDisplayModeRaw }
         set {
-            self.defaultsState.menuBarDisplayModeRaw = newValue
+            self.updateDefaultsState { $0.menuBarDisplayModeRaw = newValue }
             if let raw = newValue {
                 self.userDefaults.set(raw, forKey: "menuBarDisplayMode")
             } else {
@@ -143,7 +143,7 @@ extension SettingsStore {
     var showAllTokenAccountsInMenu: Bool {
         get { self.defaultsState.showAllTokenAccountsInMenu }
         set {
-            self.defaultsState.showAllTokenAccountsInMenu = newValue
+            self.updateDefaultsState { $0.showAllTokenAccountsInMenu = newValue }
             self.userDefaults.set(newValue, forKey: "showAllTokenAccountsInMenu")
         }
     }
@@ -151,7 +151,7 @@ extension SettingsStore {
     var menuBarMetricPreferencesRaw: [String: String] {
         get { self.defaultsState.menuBarMetricPreferencesRaw }
         set {
-            self.defaultsState.menuBarMetricPreferencesRaw = newValue
+            self.updateDefaultsState { $0.menuBarMetricPreferencesRaw = newValue }
             self.userDefaults.set(newValue, forKey: "menuBarMetricPreferences")
         }
     }
@@ -159,7 +159,7 @@ extension SettingsStore {
     var costUsageEnabled: Bool {
         get { self.defaultsState.costUsageEnabled }
         set {
-            self.defaultsState.costUsageEnabled = newValue
+            self.updateDefaultsState { $0.costUsageEnabled = newValue }
             self.userDefaults.set(newValue, forKey: "tokenCostUsageEnabled")
         }
     }
@@ -167,7 +167,7 @@ extension SettingsStore {
     var hidePersonalInfo: Bool {
         get { self.defaultsState.hidePersonalInfo }
         set {
-            self.defaultsState.hidePersonalInfo = newValue
+            self.updateDefaultsState { $0.hidePersonalInfo = newValue }
             self.userDefaults.set(newValue, forKey: "hidePersonalInfo")
         }
     }
@@ -175,7 +175,7 @@ extension SettingsStore {
     var randomBlinkEnabled: Bool {
         get { self.defaultsState.randomBlinkEnabled }
         set {
-            self.defaultsState.randomBlinkEnabled = newValue
+            self.updateDefaultsState { $0.randomBlinkEnabled = newValue }
             self.userDefaults.set(newValue, forKey: "randomBlinkEnabled")
         }
     }
@@ -183,7 +183,7 @@ extension SettingsStore {
     var menuBarShowsHighestUsage: Bool {
         get { self.defaultsState.menuBarShowsHighestUsage }
         set {
-            self.defaultsState.menuBarShowsHighestUsage = newValue
+            self.updateDefaultsState { $0.menuBarShowsHighestUsage = newValue }
             self.userDefaults.set(newValue, forKey: "menuBarShowsHighestUsage")
         }
     }
@@ -196,7 +196,7 @@ extension SettingsStore {
     private var claudeWebExtrasEnabledRaw: Bool {
         get { self.defaultsState.claudeWebExtrasEnabledRaw }
         set {
-            self.defaultsState.claudeWebExtrasEnabledRaw = newValue
+            self.updateDefaultsState { $0.claudeWebExtrasEnabledRaw = newValue }
             self.userDefaults.set(newValue, forKey: "claudeWebExtrasEnabled")
             CodexBarLog.logger(LogCategories.settings).info(
                 "Claude web extras updated",
@@ -207,7 +207,7 @@ extension SettingsStore {
     var showOptionalCreditsAndExtraUsage: Bool {
         get { self.defaultsState.showOptionalCreditsAndExtraUsage }
         set {
-            self.defaultsState.showOptionalCreditsAndExtraUsage = newValue
+            self.updateDefaultsState { $0.showOptionalCreditsAndExtraUsage = newValue }
             self.userDefaults.set(newValue, forKey: "showOptionalCreditsAndExtraUsage")
         }
     }
@@ -215,7 +215,7 @@ extension SettingsStore {
     var openAIWebAccessEnabled: Bool {
         get { self.defaultsState.openAIWebAccessEnabled }
         set {
-            self.defaultsState.openAIWebAccessEnabled = newValue
+            self.updateDefaultsState { $0.openAIWebAccessEnabled = newValue }
             self.userDefaults.set(newValue, forKey: "openAIWebAccessEnabled")
             CodexBarLog.logger(LogCategories.settings).info(
                 "OpenAI web access updated",
@@ -226,7 +226,7 @@ extension SettingsStore {
     var jetbrainsIDEBasePath: String {
         get { self.defaultsState.jetbrainsIDEBasePath }
         set {
-            self.defaultsState.jetbrainsIDEBasePath = newValue
+            self.updateDefaultsState { $0.jetbrainsIDEBasePath = newValue }
             self.userDefaults.set(newValue, forKey: "jetbrainsIDEBasePath")
         }
     }
@@ -234,7 +234,7 @@ extension SettingsStore {
     var mergeIcons: Bool {
         get { self.defaultsState.mergeIcons }
         set {
-            self.defaultsState.mergeIcons = newValue
+            self.updateDefaultsState { $0.mergeIcons = newValue }
             self.userDefaults.set(newValue, forKey: "mergeIcons")
         }
     }
@@ -242,7 +242,7 @@ extension SettingsStore {
     var switcherShowsIcons: Bool {
         get { self.defaultsState.switcherShowsIcons }
         set {
-            self.defaultsState.switcherShowsIcons = newValue
+            self.updateDefaultsState { $0.switcherShowsIcons = newValue }
             self.userDefaults.set(newValue, forKey: "switcherShowsIcons")
         }
     }
@@ -250,7 +250,7 @@ extension SettingsStore {
     private var selectedMenuProviderRaw: String? {
         get { self.defaultsState.selectedMenuProviderRaw }
         set {
-            self.defaultsState.selectedMenuProviderRaw = newValue
+            self.updateDefaultsState { $0.selectedMenuProviderRaw = newValue }
             if let raw = newValue {
                 self.userDefaults.set(raw, forKey: "selectedMenuProvider")
             } else {
@@ -269,7 +269,7 @@ extension SettingsStore {
     var providerDetectionCompleted: Bool {
         get { self.defaultsState.providerDetectionCompleted }
         set {
-            self.defaultsState.providerDetectionCompleted = newValue
+            self.updateDefaultsState { $0.providerDetectionCompleted = newValue }
             self.userDefaults.set(newValue, forKey: "providerDetectionCompleted")
         }
     }

@@ -3,6 +3,7 @@ import CodexBarCore
 import SwiftUI
 
 @MainActor
+@available(macOS 13.0, *)
 struct CostHistoryChartMenuView: View {
     typealias DailyEntry = CostUsageDailyReport.Entry
 
